@@ -1,0 +1,213 @@
+<!doctype html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>Order</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+		integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+		integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous">
+	</script>
+	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+	<!--[if lt IE 9]>
+				   <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+				   <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+				<![endif]-->
+
+	<script type="text/javascript" src="https://selfservice.sandbox.billwerk.com/subscription.js"></script>
+	<style>
+		iframe {
+			width: 99%;
+			height: 100%;
+		}
+	</style>
+</head>
+
+<body style="padding-top: 50px;">
+	<div class="container theme-showcase" role="main">
+		<div class="row">
+			<div class="col-md-5">
+				<h2>Order</h2>
+				<hr />
+				<form id="form">
+					<div class="form-group">
+						<label for="FirstName">First Name</label>
+						<input type="text" class="form-control" disabled="true" id="firstName" placeholder="FirstName">
+					</div>
+					<div class="form-group">
+						<label for="FirstName">Last Name</label>
+						<input type="text" class="form-control" disabled="true" id="lastName" placeholder="LastName">
+					</div>
+					<div class="form-group">
+						<label for="Email">Email</label>
+						<input type="email" class="form-control" disabled="true" id="email" placeholder="Email">
+					</div>
+					<div class="form-group">
+						<label for="Street">Street, Housenumber</label>
+						<input type="text" class="form-control" id="street" placeholder="Street" value="Whateverstreet"
+							disabled="true">
+						<input type="text" class="form-control" id="hnumb" placeholder="HouseNumber" value="5"
+							disabled="true">
+					</div>
+					<div class="form-group">
+						<label for="Zip">Postal Code, City</label>
+						<input type="text" class="form-control" id="zip" placeholder="PostalCode" value="12345"
+							disabled="true">
+						<input type="text" class="form-control" id="city" placeholder="City" value="Whatevercity"
+							disabled="true">
+					</div>
+					<div class="form-group">
+						<label>Payment Method</label>
+						<div>
+							<p id="PaymentMethod"></p>
+						</div>
+					</div>
+					<div class="form-group">
+						<label for="Payment">Payment Data</label>
+						<div id="payment" style="width:100%; border: 1px solid #EAEAEA ;"></div>
+					</div>
+					<button type="button" id="change" class="btn btn-default">Change payment Method</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<script>
+		var subscriptionJS = SubscriptionJS;
+
+		//This site must be hosted!
+		//e.g. http://localhost:8086/account-explicit-iframe-control.html#/q54nQcDF22DilZ66Br1xcA
+		//Don't forget to add the selfservicetoken to the url
+		//Token: https://developer.billwerk.io/Docs/ApiReference#/Contracts/Contracts_GetSelfServiceToken		
+
+		//Specifiy your own values, to test with your own Sandbox Account.
+		var publicApiKey =
+			"5981a1e381b1fc126071XXXX"; //replace with your id https://sandbox.billwerk.com/#/settings/self-service
+
+		var style = {
+			/*
+				{
+					backgroundColor: '#ffffff',    
+					fontSize: '16px',    
+					fontFamily: '"Times New Roman", Times, serif',    
+					fontStyle: 'normal',    
+					color: '#444444',
+					borderLeftColor: 'black',
+					borderLeftWidth: '5px'
+				}
+			*/
+			body: {},
+			label: {}, // For input labeling
+			input: {}, // For input, select elements
+			inputRequired: {}, // For required inputs
+			inputInvalid: {} // For invalid inputs
+		};
+
+		var config = {
+			paymentMethods: ["Debit:FakePSP", "CreditCard:FakePSP"], //restrict server config
+			publicApiKey: publicApiKey,
+			locale: 'en', //set desired locale (i18n)
+			providerReturnUrl: "https://sandbox.billwerk.com/portal/finalize.html" //replace with your url
+		};
+
+		var success_callback = function (data) {
+			console.log(new Date().toISOString() + ":->success_callback.");
+			if (!data.Url) {
+				var successUrl = "https://example.com";
+				var params = window.location.search.length > 0 ? window.location.search + "&contractId=" + data
+					.ContractId :
+					"?contractId=" + data.ContractId;
+				top.location = successUrl + params;
+			} else {
+				top.location = data.Url;
+			}
+		};
+
+		var error_callback = function (data) {
+			var msg;
+			if (data && data.errorMessage)
+				msg = data.errorMessage
+			else
+				msg = data;
+			console.log(msg);
+			alert(msg);
+		};		
+
+		var contractCurrency;
+		function loadContract() {
+			portal.contractDetails(function (data) {
+				console.log("loadContract fired");
+				$("#firstName").val(data.Customer.FirstName);
+				$("#lastName").val(data.Customer.LastName);
+				$("#street").val(data.Customer.Address.Street);
+				$("#hnumb").val(data.Customer.Address.HouseNumber);
+				$("#zip").val(data.Customer.Address.PostalCode);
+				$("#city").val(data.Customer.Address.City);
+				$("#email").val(data.Customer.EmailAddress);
+
+				$("#PaymentMethod").text(data.Contract.PaymentProvider + ":" + data.Contract.PaymentProviderRole);
+				contractCurrency = data.Contract.Currency;
+				paymentForm = subscriptionJS.createElement(
+					'paymentForm',
+					document.getElementById("payment"),
+					config,
+					style,
+					error_callback
+				);
+				//send info about customer to mandate template
+				paymentForm.payerDataChanged(data.Customer);
+
+			}, error_callback);
+		};
+
+		var errorMsg;
+		var portal;
+		var paymentForm;
+		var token;		
+
+		var urlHash = location.hash.substr(1);
+		if (urlHash) {
+			var pars = urlHash.split("/");
+			if (pars.length == 2) {
+				var tokenToTest = pars[1];
+				if (!tokenToTest || !/^[A-Za-z0-9\-_]{22}$/.test(tokenToTest))
+					errorMsg = "Token not format is not valid";
+				else
+					token = tokenToTest;
+			} else errorMsg = "Token not found";
+
+		} else errorMsg = "Query string not found";
+
+		if (token) {
+			portal = new subscriptionJS.Portal(token);
+			loadContract();
+		} else
+			error_callback(errorMsg);
+
+		$(function () {
+			$("#change").click(function (ev) {
+				if (paymentForm) {
+					paymentForm.processPaymentData(null, contractCurrency,
+						function (processedPaymentData) {
+							portal.paymentChange(null, processedPaymentData, success_callback,
+								error_callback);
+						},
+						function () { //Error callback
+							console.log('>>>>> error processing Payment Data');
+						});
+				} else
+					error_callback("Payment form is not loaded correctly!");
+			});
+		});
+	</script>
+</body>
+
+</html>

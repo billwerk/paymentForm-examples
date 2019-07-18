@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Order</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+		integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<!-- Optional theme -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+		integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+	<script type="text/javascript" src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<!-- Latest compiled and minified JavaScript -->
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+		integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous">
+	</script>
+	<!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+	<!--[if lt IE 9]>
+  	<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+  	<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+	<![endif]-->
+
+	<script type="text/javascript" src="https://selfservice.sandbox.billwerk.com/subscription.js"></script>
+	<style>
+		iframe {
+			width: 99%;
+			height: 100%;
+		}
+	</style>
+</head>
+
+<body style="padding-top: 50px;">
+	<div class="container theme-showcase" role="main">
+		<div class="row">
+			<div class="col-md-5">
+				<h2>Order</h2>
+				<hr />
+				<form id="form">
+					<div class="form-group">
+						<label for="FirstName">First Name</label>
+						<input type="text" class="form-control" id="firstName" placeholder="FirstName" value="Marcellus">
+					</div>
+					<div class="form-group">
+						<label for="FirstName">Last Name</label>
+						<input type="text" class="form-control" id="lastName" placeholder="LastName" value="Wallace">
+					</div>
+					<div class="form-group">
+						<label for="Email">Email</label>
+						<input type="email" class="form-control" id="email" placeholder="Email"	value="mw@example.com">
+					</div>
+					<div class="form-group">
+						<label for="Street">Street, Housenumber</label>
+						<input type="text" class="form-control" id="street" placeholder="Street" value="Whateverstreet">
+						<input type="text" class="form-control" id="hnumb" placeholder="HouseNumber" value="5">
+					</div>
+					<div class="form-group">
+						<label for="Zip">Postal Code, City</label>
+						<input type="text" class="form-control" id="zip" placeholder="PostalCode" value="12345">
+						<input type="text" class="form-control" id="city" placeholder="City" value="Whatevercity">
+					</div>
+					<div class="form-group">
+						<label for="Payment">Paymentdata</label>
+						<div id="payment" style="width:100%; border: 1px solid #EAEAEA ;"></div>
+					</div>
+					<button type="button" id="buy" class="btn btn-default">Order now</button>
+				</form>
+			</div>
+		</div>
+	</div>
+	<script>
+		var subscriptionJS = SubscriptionJS;
+		//This site must be hosted
+		// e.g. http://localhost:8086/index-explicit-iframe-control.html
+		//Specifiy your own values, to test with your own Sandbox Account.
+		var publicApiKey = "5981a1e381b1fc126071XXXX"; //replace with your id https://sandbox.billwerk.com/#/settings/self-service
+		var planVariantId = "5c8ba204443e55181c34c633"; //replace with your id	https://sandbox.billwerk.com/#/products
+
+		var style = {
+			/*
+				{
+					backgroundColor: '#ffffff',    
+					fontSize: '16px',    
+					fontFamily: '"Times New Roman", Times, serif',    
+					fontStyle: 'normal',    
+					color: '#444444',
+					borderLeftColor: 'black',
+					borderLeftWidth: '5px'
+				}
+			*/
+			body: {},
+			label: {}, // For input labeling
+			input: {}, // For input, select elements
+			inputRequired: {}, // For required inputs
+			inputInvalid: {} // For invalid inputs
+		};
+
+		var config = {
+			paymentMethods: ["Debit:FakePSP", "CreditCard:FakePSP"], //restrict server config
+			publicApiKey: publicApiKey,
+			locale: 'en', //set desired locale (i18n)
+			providerReturnUrl: "https://sandbox.billwerk.com/portal/finalize.html" //replace with your url
+		};
+
+		var success_callback = function (data) {
+			console.log(new Date().toISOString() + ":->success_callback.");
+			if (!data.Url) {
+				var successUrl = "https://example.com";
+				var params = window.location.search.length > 0 ? window.location.search + "&contractId=" + data
+					.ContractId :
+					"?contractId=" + data.ContractId;
+				top.location = successUrl + params;
+			} else {
+				top.location = data.Url;
+			}
+		};
+
+		var error_callback = function (data) {
+			alert(data.errorMessage);
+		};
+
+		var paymentForm = subscriptionJS.createElement(
+			'paymentForm',
+			document.getElementById("payment"),
+			config,
+			style,
+			error_callback
+		);
+
+		var signupService = new subscriptionJS.Signup();
+
+	$(function () {
+		var getCustomerData = function () {
+			return {
+				FirstName: $("#firstName").val(),
+				LastName: $("#lastName").val(),
+				EmailAddress: $("#email").val(),
+				"Address": {
+					"Street": $("#street").val(),
+					"HouseNumber": $("#hnumb").val(),
+					"PostalCode": $("#zip").val(),
+					"City": $("#city").val(),
+					"Country": "DE"
+				}
+			};
+		};
+		var sendCustomerDataToPaymentForm = function (e) {
+			paymentForm.payerDataChanged(getCustomerData());
+		};
+		sendCustomerDataToPaymentForm();
+		$("#firstName").on("change", sendCustomerDataToPaymentForm);
+		$("#lastName").on("change", sendCustomerDataToPaymentForm);
+		$("#email").on("change", sendCustomerDataToPaymentForm);
+		$("#street").on("change", sendCustomerDataToPaymentForm);
+		$("#hnumb").on("change", sendCustomerDataToPaymentForm);
+		$("#zip").on("change", sendCustomerDataToPaymentForm);
+		$("#city").on("change", sendCustomerDataToPaymentForm);
+		$("#buy").click(function (ev) {
+			// enforce HTML5 validation:
+			ev.target.checkValidity();
+			// Create BillwerkJS DTOs from user input
+			var cart = {
+				"PlanVariantId": planVariantId,
+			};
+			var customer = getCustomerData();
+			// Get an order preview
+			signupService.preview(cart, customer,
+				function (preview) { //Success callback
+					iframeObj.processPaymentData(preview.Order.TotalGross, preview.Order.Currency,
+						function (processedPaymentData) {
+							//Will return the processed payment data
+							//Merchant can do further checks on processed payment data here.
+							//This is a direct call to create the order via subscriptionJS. 
+							//If required you can also replace this by a request to your server 
+							//and create the order via billwerk REST API
+							//processedPaymentData is passed here instead of the paymentForm object.
+							//So tethering the payment data can be skipped within createOrder
+							signupService.createOrder(cart, customer,
+								function (order) { //Success callback				
+									signupService.paySignupInteractive(null,
+										processedPaymentData, order, success_callback,
+										error_callback);
+									//Accordingly upgrade payment and payment method change are called:
+									//portal.upgradePayInteractive(null, paymentForm, order, success, error);
+									//portal.paymentChange(null, paymentForm, success, error);
+									console.log('>>>>> order created successfully');
+								},
+								function () { //Error callback
+									console.log('>>>>> error creating the order');
+								}
+							);
+						},
+						function () { //Error callback
+							console.log('>>>>> error processing Payment Data');
+						}
+					);
+				},
+				function () { //Error callback
+					console.log('>>>>> error previewing the order');
+				}
+			);
+		});
+	});
+	</script>
+</body>
+
+</html>
