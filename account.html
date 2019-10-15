@@ -123,7 +123,7 @@
 					"?contractId=" + data.ContractId;
 				top.location = successUrl + params;
 			} else {
-				top.location = data.Url;
+				top.location = data.Url; //Redirect to Return URL -> call SubscriptionJS.finalize()
 			}
 		};
 
